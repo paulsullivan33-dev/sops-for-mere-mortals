@@ -1,0 +1,5 @@
+service_name: fixture-web
+public_url: https://www.example.com
+db_password: partial-fixture-secret-777
+api_token: partial-fixture-token-888
+retry_count: 3

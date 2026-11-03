@@ -1,0 +1,12 @@
+database:
+    host: db.example.com
+    port: 5432
+    username: workshop_app
+    password: correct-horse-battery-staple-42
+api:
+    endpoint: https://api.example.com/v1
+    token: fixture-token-0000-aaaa-bbbb
+features:
+    signup_open: true
+    max_items: 25
+greeting: the keys stay readable, the values do not

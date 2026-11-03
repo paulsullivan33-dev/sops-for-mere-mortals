@@ -1,0 +1,31 @@
+# A YAML file with comments, sealed and opened again: does
+
+# the prose survive? (Raised while writing the limits chapter.)
+
+$ cat commented.yaml
+# The fixture service. This comment explains the file.
+database:
+    host: db.example.com # the primary
+    # TODO: rotate this monthly.
+    password: comment-fixture-secret-6060
+
+$ cp commented.yaml commented.orig.yaml
+
+$ sops encrypt --age age1svvqr3y4rhe0dsypnrm5qa8fwlauav7f9ze5hlgm08kysczr450qmg4zht -i commented.yaml
+
+$ SOPS_AGE_KEY_FILE=/home/hatch/workspace/sops-labwork/work/keys/operator.txt sops decrypt commented.yaml
+# The fixture service. This comment explains the file.
+database:
+    # the primary
+    host: db.example.com
+    # TODO: rotate this monthly.
+    password: comment-fixture-secret-6060
+
+$ diff commented.orig.yaml <(SOPS_AGE_KEY_FILE=/home/hatch/workspace/sops-labwork/work/keys/operator.txt sops decrypt commented.yaml) && echo IDENTICAL || echo DIFFERS
+3c3,4
+<     host: db.example.com # the primary
+---
+>     # the primary
+>     host: db.example.com
+DIFFERS
+

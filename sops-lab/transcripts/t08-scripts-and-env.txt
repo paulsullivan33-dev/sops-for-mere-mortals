@@ -1,0 +1,54 @@
+# A dotenv file: names and values, no structure. Sops seals the
+
+# values and keeps the format, given the type flags.
+
+$ cat secrets.env
+DB_PASSWORD=env-fixture-password-3141
+API_TOKEN=env-fixture-token-2718
+PLAIN_NOTE=this value was never secret
+
+$ sops encrypt --age age1svvqr3y4rhe0dsypnrm5qa8fwlauav7f9ze5hlgm08kysczr450qmg4zht --input-type dotenv --output-type dotenv --output secrets.enc.env secrets.env
+
+$ cat secrets.enc.env
+DB_PASSWORD=ENC[AES256_GCM,data:fbjes6BANbgbMYMfO6PTsP+dJ1yv1BdNoQ==,iv:GQkdXC7rbNSbBdzBFgWrA9h3STgEc2TaWomt37D7SMU=,tag:UfWnVOdJiDzBmskO+8ozKQ==,type:str]
+API_TOKEN=ENC[AES256_GCM,data:lHRMoprHFQf7upg9qq6f27Z0+qbzLg==,iv:G9hjRovKfpksROHGjdBukfVCgLoxSTNB+47jcGcrWgY=,tag:s9B/UVvazy7dKLbnsh8elQ==,type:str]
+PLAIN_NOTE=ENC[AES256_GCM,data:Ln+ri9FQoFpRgUXd7GoiF+n8UnrrL3nrJxxz,iv:JLl0pQetQzTdAFbwgaUDkAU0awGZnAu8mhJyq/oXrLA=,tag:VozpGqmOWMzpsDFNqVmr7A==,type:str]
+sops_age__list_0__map_enc=-----BEGIN AGE ENCRYPTED FILE-----\nYWdlLWVuY3J5cHRpb24ub3JnL3YxCi0+IFgyNTUxOSAwNHRNVjFzWDllUHA5SlJp\nRTByb3JYeDNtejF3R0tHbXJlaVQ5eG9zV2w4CmpraXB1cm15TEx5YjAzeUtudzcy\nUGpZZHdBVXBkSDZkczhIbUFWR3cyNDAKLS0tIEZXaFpadUxIN0tMY1gvZVpjdnlZ\nYlNraGF2cCtNWEJZdHJvcUpRejR5b28KFZEFRrFEVMg3uKyPLsT/G41JslADl/jh\nyrD7pYYftvfIkzo4YrFcpXjcHsjc4x1APucCc+P3XqefyAJAWOyYxg==\n-----END AGE ENCRYPTED FILE-----\n
+sops_age__list_0__map_recipient=age1svvqr3y4rhe0dsypnrm5qa8fwlauav7f9ze5hlgm08kysczr450qmg4zht
+sops_lastmodified=2026-11-03T00:58:12Z
+sops_mac=ENC[AES256_GCM,data:I2u9XDqKxUWi8z7NoURvWeofSCTfvk6S0yg/JBUL+v5WygWrXYL1DIEB1jeOGImiavKJ78hNZnCDZYGf73o+lyKUQXd4pvHtHVIEy4XQbqB/sT6ldT3By6tg4e63pMqkdB29JcukzbgfrYdm2DRHWJgWQsufYQtCoSLS0hT9Btw=,iv:qTRRiC0Beb9rIewrh1wvfX5nVPJMj26QRY5bNZNQN0o=,tag:7b7S04M9U0WkZVk3FxAygw==,type:str]
+sops_unencrypted_suffix=_unencrypted
+sops_version=3.13.3
+
+# exec-env decrypts in memory and runs a command with the values
+
+# in its environment. Nothing decrypted touches the disk.
+
+$ sops exec-env secrets.enc.env 'printenv DB_PASSWORD'
+env-fixture-password-3141
+
+$ sops exec-env secrets.enc.env 'printenv PLAIN_NOTE'
+this value was never secret
+
+# The surrounding shell never sees them:
+
+$ printenv DB_PASSWORD; echo exit=$?
+exit=1
+
+# exec-file is the file-shaped version: the decrypted document
+
+# appears as a temp file whose path replaces {} in the command,
+
+# and is shredded when the command ends.
+
+$ sops exec-file app.enc.yaml 'grep host {}'
+    host: db.example.com
+
+# And the plain pipe for everything else: decrypt to stdout,
+
+# handed to whatever reads the format.
+
+$ sops decrypt app.enc.yaml | grep -E 'host|port'
+    host: db.example.com
+    port: 5432
+

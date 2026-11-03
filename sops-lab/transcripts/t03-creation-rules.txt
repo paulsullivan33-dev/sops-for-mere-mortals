@@ -1,0 +1,58 @@
+# One .sops.yaml at the top of the tree: files under prod/ are
+
+# sealed for two people, files under dev/ for the operator alone.
+
+$ cat .sops.yaml
+creation_rules:
+    - path_regex: prod/
+      age: "age1svvqr3y4rhe0dsypnrm5qa8fwlauav7f9ze5hlgm08kysczr450qmg4zht,age18n58ry4m57yjkn95skz7t5wchmg8vkw53rl02yz3su99l70jz9xscd4tzn"
+    - path_regex: dev/
+      age: "age1svvqr3y4rhe0dsypnrm5qa8fwlauav7f9ze5hlgm08kysczr450qmg4zht"
+
+# No --age flag this time: the rules choose the keys.
+
+$ sops encrypt -i prod/settings.yaml
+
+$ sops encrypt -i dev/settings.yaml
+
+# The metadata in each file names its own recipients.
+
+$ grep -A1 recipient prod/settings.yaml
+          recipient: age1svvqr3y4rhe0dsypnrm5qa8fwlauav7f9ze5hlgm08kysczr450qmg4zht
+        - enc: |
+--
+          recipient: age18n58ry4m57yjkn95skz7t5wchmg8vkw53rl02yz3su99l70jz9xscd4tzn
+    lastmodified: "2026-11-03T00:56:43Z"
+
+$ grep -A1 recipient dev/settings.yaml
+          recipient: age1svvqr3y4rhe0dsypnrm5qa8fwlauav7f9ze5hlgm08kysczr450qmg4zht
+    lastmodified: "2026-11-03T00:56:43Z"
+
+# The teammate can open the prod file but not the dev file.
+
+$ SOPS_AGE_KEY_FILE=/home/hatch/workspace/sops-labwork/work/keys/teammate.txt sops decrypt prod/settings.yaml
+service: billing-worker
+api_key: prod-fixture-key-1111
+
+$ SOPS_AGE_KEY_FILE=/home/hatch/workspace/sops-labwork/work/keys/teammate.txt sops decrypt dev/settings.yaml; echo exit=$?
+Failed to get the data key required to decrypt the SOPS file.
+
+Group 0: FAILED
+  age1svvqr3y4rhe0dsypnrm5qa8fwlauav7f9ze5hlgm08kysczr450qmg4zht: FAILED
+    - | failed to create reader for decrypting sops data key with
+      | age: no identity matched any of the recipients. Did not find
+      | keys in locations 'SOPS_AGE_SSH_PRIVATE_KEY_FILE',
+      | 'SOPS_AGE_SSH_PRIVATE_KEY_CMD', '/home/hatch/.ssh/id_rsa',
+      | 'SOPS_AGE_KEY', and 'SOPS_AGE_KEY_CMD'.
+
+Recovery failed because no master key was able to decrypt the file. In
+order for SOPS to recover the file, at least one key has to be successful,
+but none were.
+exit=128
+
+# Outside any rules, with no key named, sops refuses rather than guess.
+
+$ sops encrypt -i orphan.yaml; echo exit=$?
+config file not found, or has no creation rules, and no keys provided through command line options
+exit=1
+

@@ -1,0 +1,1 @@
+{"credentials":{"password":"json-fixture-secret-1234","username":"svc_fixture"},"debug":false,"listen":8080,"service":"fixture-api","tags":["fixture","example"]}

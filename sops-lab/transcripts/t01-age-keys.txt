@@ -1,0 +1,43 @@
+# Four lab key pairs: the operator, a teammate, a second teammate
+
+# who arrives later (for rotation), and a stranger who is never
+
+# a recipient (for failure tests). Every key here exists only for
+
+# this lab and is worthless outside it.
+
+$ age-keygen -o operator.txt
+Public key: age1svvqr3y4rhe0dsypnrm5qa8fwlauav7f9ze5hlgm08kysczr450qmg4zht
+
+$ age-keygen -o teammate.txt
+Public key: age18n58ry4m57yjkn95skz7t5wchmg8vkw53rl02yz3su99l70jz9xscd4tzn
+
+$ age-keygen -o newcomer.txt
+Public key: age1lhvrv2yagktassvcj6ggd5wst3h5xmq4gf7v4dtjkpvkg423yvxs4n5v7r
+
+$ age-keygen -o stranger.txt
+Public key: age1n5j9eetlmg8h0t2s3620eke7quzcxy9vt8p3075kmm7ecsu92a6s47s58w
+
+$ chmod 600 operator.txt teammate.txt newcomer.txt stranger.txt
+
+# An age key file: the public key is a comment; the secret is the file.
+
+$ cat operator.txt
+# created: 2026-11-03T00:56:24Z
+# public key: age1svvqr3y4rhe0dsypnrm5qa8fwlauav7f9ze5hlgm08kysczr450qmg4zht
+AGE-SECRET-KEY-14CZCZ0R8ZM9QTX2MV6LRFDJAC07AERD0VGDRAT0XLV4FKHHHFRMQAJX62K
+
+# The public half alone, recovered from the secret half:
+
+$ age-keygen -y operator.txt
+age1svvqr3y4rhe0dsypnrm5qa8fwlauav7f9ze5hlgm08kysczr450qmg4zht
+
+$ ls -la
+total 16
+drwxrwx--- 1 root root  96 Nov  3 00:56 .
+drwxrwx--- 1 root root   8 Nov  3 00:56 ..
+-rw------- 1 root root 184 Nov  3 00:56 newcomer.txt
+-rw------- 1 root root 184 Nov  3 00:56 operator.txt
+-rw------- 1 root root 184 Nov  3 00:56 stranger.txt
+-rw------- 1 root root 184 Nov  3 00:56 teammate.txt
+

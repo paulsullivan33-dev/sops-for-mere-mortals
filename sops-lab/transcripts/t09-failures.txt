@@ -1,0 +1,53 @@
+# filestatus answers 'is this a sops file, and is it sealed?'
+
+# without needing any key.
+
+$ sops filestatus app.enc.yaml
+{"encrypted":true}
+
+$ sops filestatus plain.yaml
+{"encrypted":false}
+
+# The stranger's key: a perfectly good age key that is simply
+
+# not a recipient of this file.
+
+$ SOPS_AGE_KEY_FILE=/home/hatch/workspace/sops-labwork/work/keys/stranger.txt sops decrypt app.enc.yaml 2>&1 | head -3; true
+Failed to get the data key required to decrypt the SOPS file.
+
+Group 0: FAILED
+
+# No key anywhere sops looks:
+
+$ env -u SOPS_AGE_KEY_FILE -u SOPS_AGE_KEY HOME=/home/hatch/workspace/sops-labwork/work/failures/nohome sops decrypt app.enc.yaml 2>&1 | tail -3; true
+Recovery failed because no master key was able to decrypt the file. In
+order for SOPS to recover the file, at least one key has to be successful,
+but none were.
+
+# Decrypting a file that was never encrypted:
+
+$ SOPS_AGE_KEY_FILE=/home/hatch/workspace/sops-labwork/work/keys/operator.txt sops decrypt plain.yaml 2>&1 | head -2; true
+sops metadata not found
+
+# Encrypting a file that is already encrypted:
+
+$ sops encrypt --age age1svvqr3y4rhe0dsypnrm5qa8fwlauav7f9ze5hlgm08kysczr450qmg4zht app.enc.yaml 2>&1 | head -2; true
+The file you have provided contains a top-level entry called 'sops', or for
+flat file formats top-level entries starting with 'sops_'. This is
+
+# Tampering: one character changed inside a sealed value.
+
+$ cp app.enc.yaml tampered.yaml
+
+$ sed -i 's/data:sR/data:tR/' tampered.yaml
+
+$ SOPS_AGE_KEY_FILE=/home/hatch/workspace/sops-labwork/work/keys/operator.txt sops decrypt tampered.yaml 2>&1 | head -3; true
+Error decrypting tree: Error walking tree: Could not decrypt value: Could not decrypt with AES_GCM: cipher: message authentication failed
+
+# Every failure above exits non-zero (128 for decryption
+
+# failures, 1 for usage errors), so scripts can tell.
+
+$ SOPS_AGE_KEY_FILE=/home/hatch/workspace/sops-labwork/work/keys/stranger.txt sops decrypt app.enc.yaml >/dev/null 2>&1; echo exit=$?
+exit=128
+

@@ -1,0 +1,64 @@
+# Sometimes only some values are secret. --encrypted-regex seals
+
+# only the values whose KEY matches the pattern.
+
+$ cat partial.yaml
+service_name: fixture-web
+public_url: https://www.example.com
+db_password: partial-fixture-secret-777
+api_token: partial-fixture-token-888
+retry_count: 3
+
+$ sops encrypt --age age1svvqr3y4rhe0dsypnrm5qa8fwlauav7f9ze5hlgm08kysczr450qmg4zht --encrypted-regex ^(db_password|api_token)$ --output partial.enc.yaml partial.yaml
+
+$ cat partial.enc.yaml
+service_name: fixture-web
+public_url: https://www.example.com
+db_password: ENC[AES256_GCM,data:qxjy4YagdsYK3ls6Qdp6zXByYoBujdF2wmY=,iv:uKWVAPuGrpN4y5QqWIibyts+Gz52wUXMpH5uj3N3BNw=,tag:Jdf2TzVkaTZNaanU7V418A==,type:str]
+api_token: ENC[AES256_GCM,data:Z8vCeUij8BbXU1Gy38MyOgBhlOBf+b+Vvw==,iv:mNsYn2eOEQs70I8SkjaJsVokC2iM4AIqJtzPrp/42p0=,tag:rqyvnNuyk0sx5M1bSrIACg==,type:str]
+retry_count: 3
+sops:
+    age:
+        - enc: |
+            -----BEGIN AGE ENCRYPTED FILE-----
+            YWdlLWVuY3J5cHRpb24ub3JnL3YxCi0+IFgyNTUxOSBBWTdKVktoQVVzWEdFR0xv
+            clBXRy9zTEhhdFQ3bmc5WlZnMjZHN2I2WGhvCjVrdE4wZUpDb2pwUndXenBRbzgz
+            enZOS3RNTUFwSWxLS0hTMHpJY3VjRDQKLS0tIEcxNG0zQTFpOUZObWNMNXcrdDhl
+            OG51NGVCQUtkNG1rQUFFcFlLWFU0WkkK5Y9UR6wqpp1QpGXsZEtNK28jCb/fqqfN
+            z99j6xc3jV31S7+bC3x0b5vbMIk/DflrvNo7Kf9yZBVPrXDw8ECm2g==
+            -----END AGE ENCRYPTED FILE-----
+          recipient: age1svvqr3y4rhe0dsypnrm5qa8fwlauav7f9ze5hlgm08kysczr450qmg4zht
+    encrypted_regex: ^(db_password|api_token)$
+    lastmodified: "2026-11-03T00:56:53Z"
+    mac: ENC[AES256_GCM,data:etqMxfky0z+7t+saPrZjJR0wlDLUpNCRThtmIBcO7ZeGGvY3vRNaP0eYq9WBUUw6X6TtdQOZU2l8JptFiKqsfqY+e62lkLYfieLS3d+3+fseIdJ5EiOkUL16+/e+Af92ygdsP5wE+0cR+8fO2j4bfSWUjio74an7/kVp8WCAjjs=,iv:C0+TCNkrIWZ/VkWgELcZHlwntPNKMVgjaTCHgegnfhc=,tag:zAlgTGb5zzfcXUuSbVZoRg==,type:str]
+    version: 3.13.3
+
+# The mirror trick: a key ending in _unencrypted keeps its value
+
+# in the clear even in a fully encrypted file.
+
+$ cat suffix.yaml
+db_password: suffix-fixture-secret-999
+db_password_hint_unencrypted: the fixture safe, third drawer
+
+$ sops encrypt --age age1svvqr3y4rhe0dsypnrm5qa8fwlauav7f9ze5hlgm08kysczr450qmg4zht -i suffix.yaml
+
+$ cat suffix.yaml
+db_password: ENC[AES256_GCM,data:2O/jd4SCMWgVGJSAg7AWITUwhOHKvFLMsw==,iv:H2VjIg5Rtk6f52h8L23sf/oXZqQEBbKzc8Nrp+7BkBg=,tag:Sdh4FjH+yDsHBxJGk+xYSA==,type:str]
+db_password_hint_unencrypted: the fixture safe, third drawer
+sops:
+    age:
+        - enc: |
+            -----BEGIN AGE ENCRYPTED FILE-----
+            YWdlLWVuY3J5cHRpb24ub3JnL3YxCi0+IFgyNTUxOSBPd1FlQW5GbzBLbVVmS1NR
+            dHRqWEJsMjhpRHNUU3VXandaVElVUFdHTWlzCmdQcmVWVXk2VUFoZGcwdmFoRktx
+            S1BKcTRoQU1JakNVK2RoYWw4NHVROTAKLS0tIEw3dDBQN1pudVY5cU5FRW9LYWx4
+            SVphcU9MQSt3eUxKNXd2cjZjSC9vV0EKRKJD0HAD4CWGRksgpT3IMRTtXSKEbZat
+            Mpp71ebO3Qnn4P462qxixx0hdDJR8irUU8Foa7phJ0GfkyMXxWZ5rQ==
+            -----END AGE ENCRYPTED FILE-----
+          recipient: age1svvqr3y4rhe0dsypnrm5qa8fwlauav7f9ze5hlgm08kysczr450qmg4zht
+    lastmodified: "2026-11-03T00:56:53Z"
+    mac: ENC[AES256_GCM,data:e0r32bJn82t3FhFdYqmDV5hshRvMCid4RKex7ypo0d/r5I/auShO5qF+H3Qt5hntqUsaqsUooZz91EUJxvZ99N1mFjXTOfUR33MZEca7isWAIzL6HsFFDq4FL4kKW+rQYUGNmGN3h47nmS+WpJ5QTstSLMylUsewNCB1kACntDA=,iv:/yNBCZeL5YvuGA3AInjwo5sAZSEbQBC596/QDl2Irjw=,tag:WIgHLXdAi3/I5OM52MZcKA==,type:str]
+    unencrypted_suffix: _unencrypted
+    version: 3.13.3
+

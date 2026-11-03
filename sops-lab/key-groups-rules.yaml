@@ -1,0 +1,8 @@
+creation_rules:
+    - path_regex: shared[.]yaml$
+      key_groups:
+        - age:
+            - "age1svvqr3y4rhe0dsypnrm5qa8fwlauav7f9ze5hlgm08kysczr450qmg4zht"
+        - age:
+            - "age18n58ry4m57yjkn95skz7t5wchmg8vkw53rl02yz3su99l70jz9xscd4tzn"
+      shamir_threshold: 2

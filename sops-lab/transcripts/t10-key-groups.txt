@@ -1,0 +1,40 @@
+# Two key GROUPS, threshold 2: the data key is split so that one
+
+# key from EACH group is required. Either person alone is stuck.
+
+$ cat .sops.yaml
+creation_rules:
+    - path_regex: shared[.]yaml$
+      key_groups:
+        - age:
+            - "age1svvqr3y4rhe0dsypnrm5qa8fwlauav7f9ze5hlgm08kysczr450qmg4zht"
+        - age:
+            - "age18n58ry4m57yjkn95skz7t5wchmg8vkw53rl02yz3su99l70jz9xscd4tzn"
+      shamir_threshold: 2
+
+$ sops encrypt -i shared.yaml
+
+$ grep -E "shamir_threshold|recipient:" shared.yaml
+              recipient: age1svvqr3y4rhe0dsypnrm5qa8fwlauav7f9ze5hlgm08kysczr450qmg4zht
+              recipient: age18n58ry4m57yjkn95skz7t5wchmg8vkw53rl02yz3su99l70jz9xscd4tzn
+    shamir_threshold: 2
+
+# The operator alone:
+
+$ SOPS_AGE_KEY_FILE=/home/hatch/workspace/sops-labwork/work/keys/operator.txt sops decrypt shared.yaml 2>&1 | head -3; true
+Failed to get the data key required to decrypt the SOPS file.
+
+Group 0: SUCCESS
+
+# The teammate alone:
+
+$ SOPS_AGE_KEY_FILE=/home/hatch/workspace/sops-labwork/work/keys/teammate.txt sops decrypt shared.yaml 2>&1 | head -3; true
+Failed to get the data key required to decrypt the SOPS file.
+
+Group 0: FAILED
+
+# Both keys together (one file may hold several identities):
+
+$ SOPS_AGE_KEY_FILE=/home/hatch/workspace/sops-labwork/work/groups/both-keys.txt sops decrypt shared.yaml
+vault_code: two-keys-required-1234
+

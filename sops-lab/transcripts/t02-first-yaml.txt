@@ -1,0 +1,74 @@
+# The fixture: an invented settings file with invented secrets.
+
+$ cat app.yaml
+database:
+    host: db.example.com
+    port: 5432
+    username: workshop_app
+    password: correct-horse-battery-staple-42
+api:
+    endpoint: https://api.example.com/v1
+    token: fixture-token-0000-aaaa-bbbb
+features:
+    signup_open: true
+    max_items: 25
+greeting: the keys stay readable, the values do not
+
+$ sha256sum app.yaml
+9301cefb28d6b1ff3045e7b23ba6453fe3a209a7b6b8a2cec25105ccc1ecb832  app.yaml
+
+# Encrypt for the operator's age key, writing a new file.
+
+$ sops encrypt --age age1svvqr3y4rhe0dsypnrm5qa8fwlauav7f9ze5hlgm08kysczr450qmg4zht --output app.enc.yaml app.yaml
+
+# Keys and structure stay readable; every value is sealed.
+
+$ cat app.enc.yaml
+database:
+    host: ENC[AES256_GCM,data:sR75sMZL/0iDpfyIXhY=,iv:P2jkWyNY2wKv8fkTWa20OQU0EE0+CR8UI6P3Odg5uJg=,tag:OxOz1UnKGasmNRKKZilIGw==,type:str]
+    port: ENC[AES256_GCM,data:G72IHQ==,iv:JCercKzLOXOvSn1oHqaWoPKom3c8Aupi5sPP/CBrLWI=,tag:pANDRA6k7JLGwnTvWSfNVg==,type:int]
+    username: ENC[AES256_GCM,data:t4Y/gLIPWjoTSTUG,iv:hHW0j53YAK93G1QowSZviGrLMSijiLiF2Tb+K/2ZTnM=,tag:L39tW/Nd5XVfHO1ufagHxw==,type:str]
+    password: ENC[AES256_GCM,data:4HJDaGNpEcaMJZjkH+cxsACY/832PGEVpjvKg/6sag==,iv:YcId1U5hHETGkjOHREuwFAIx/5bGxYk4KOz/xkKPuv8=,tag:oK/aLOJGqLe43BrEViiySA==,type:str]
+api:
+    endpoint: ENC[AES256_GCM,data:CiaqXo7GBPQLsW9tc0BVnYq2BP0i/PGXhd4=,iv:HAZBm2WyR/yXdeefKlSGJMhoYsv5+a3nf0dNkKs7YDo=,tag:6GRUKizw7C4lL2uU2+v0Ig==,type:str]
+    token: ENC[AES256_GCM,data:elEPIhsYFomWqLZj/D0V2WvPmlrwHRZr0TLkDw==,iv:G5uialN3xwNtEXwJzCTmzL6uFb38y64EcZwgKdM83UI=,tag:78CLaLBW3hmGoiILjNpfnQ==,type:str]
+features:
+    signup_open: ENC[AES256_GCM,data:btU4iQ==,iv:drajCSbspp3WS6u+hT2PABxPzmUOfBGEpStezGBOMSM=,tag:kJGmKwztpUQfyu72b62XXA==,type:bool]
+    max_items: ENC[AES256_GCM,data:lx4=,iv:0oNSKejBUnxBdGVrMYTNb0iKrt/M2VUME3H436gHcYg=,tag:5uJ7EQMgSX8afFCUwB4p4w==,type:int]
+greeting: ENC[AES256_GCM,data:8c3FOaUSe3aASiGrmBDw/SKsLFNhGi73zw3rDl5V2l9QXRbIG6r6MYE=,iv:joxaJkGiCZvmu2+AQ/4682PtdRl4aWbBLafOTcoYqas=,tag:C15xGRfukVjaoyMYGnWDSg==,type:str]
+sops:
+    age:
+        - enc: |
+            -----BEGIN AGE ENCRYPTED FILE-----
+            YWdlLWVuY3J5cHRpb24ub3JnL3YxCi0+IFgyNTUxOSA2QU9vMUtKaVJrT2Q1dEMr
+            WXc3anIzam1oYnkxcjQ1d3h2UXpHS2pwcVZ3ClZsZEtNK1FoMXQ5L1BJNE9rN0Zs
+            eGljVGZJd1JCdVpUMElNS1NPVXhtUjAKLS0tIEJDVkhIMUMvUlE2SHg0d291dVVT
+            SGdRa2k3UmRSQUYwNkI1M0dySUZDRFkKvnje/N7yrBFfVrDRuZXkZ4y4OKQlL1bE
+            ZxKq8sgHvPYHRQBQp6cG2//0KoTaFhJFMMHHG/airQn42Agcr0LaYg==
+            -----END AGE ENCRYPTED FILE-----
+          recipient: age1svvqr3y4rhe0dsypnrm5qa8fwlauav7f9ze5hlgm08kysczr450qmg4zht
+    lastmodified: "2026-11-03T00:56:33Z"
+    mac: ENC[AES256_GCM,data:ztZ8aztfJeTxNcryx4cnispw08x5NSmljE87vb4sgYRGsF3uGCmn1n1rGMLsGGMJK4uiLYb/gti7yeMdw7zHnGHbnj3Wsb3SgfEnoKehFrBZIYmh+1CW9DrG9/KVBsjrvNZs/hOPWvto7zTlE+jdyEqtY48KFJV6fAPsOTpMbMk=,iv:tBG42+abbCqimgm4MRdFPy0s5XgMFeW31Qj7v4pSmeo=,tag:WaHj7Et39QfrPzt8rKsy1w==,type:str]
+    unencrypted_suffix: _unencrypted
+    version: 3.13.3
+
+# Decrypt to a file and compare hashes with the original.
+
+$ SOPS_AGE_KEY_FILE=/home/hatch/workspace/sops-labwork/work/keys/operator.txt sops decrypt --output app.roundtrip.yaml app.enc.yaml
+
+$ sha256sum app.yaml app.roundtrip.yaml
+9301cefb28d6b1ff3045e7b23ba6453fe3a209a7b6b8a2cec25105ccc1ecb832  app.yaml
+9301cefb28d6b1ff3045e7b23ba6453fe3a209a7b6b8a2cec25105ccc1ecb832  app.roundtrip.yaml
+
+$ cmp app.yaml app.roundtrip.yaml && echo IDENTICAL
+IDENTICAL
+
+# Decrypting to standard output is the same file, unwritten.
+
+$ SOPS_AGE_KEY_FILE=/home/hatch/workspace/sops-labwork/work/keys/operator.txt sops decrypt app.enc.yaml | head -5
+database:
+    host: db.example.com
+    port: 5432
+    username: workshop_app
+    password: correct-horse-battery-staple-42
+

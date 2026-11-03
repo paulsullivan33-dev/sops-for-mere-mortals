@@ -1,0 +1,51 @@
+# The everyday flow: open the sealed file in an editor. Sops
+
+# decrypts to a temp file, you edit the plain text, and closing
+
+# the editor re-seals it. Here a script plays the editor and
+
+# changes one number, so the run can be a transcript.
+
+$ cat editor.sh
+#!/bin/sh
+# Stand-in editor for the lab: makes one small change to the
+# decrypted file sops hands it, the way a person would.
+sed -i 's/max_items: 25/max_items: 30/' "$1"
+
+$ EDITOR=./editor.sh sops edit app.enc.yaml
+
+# Nothing printed, but the file changed: still sealed outside,
+
+$ grep -c "ENC\[" app.enc.yaml
+10
+
+# and inside, the number is the new one.
+
+$ sops decrypt app.enc.yaml | grep max_items
+    max_items: 30
+
+# Single values can also be changed without opening an editor.
+
+# Values are given as JSON, so strings arrive quoted:
+
+$ sops set app.enc.yaml ["features"]["max_items"] 31
+
+$ sops set app.enc.yaml ["greeting"] "edited without an editor"
+
+$ sops decrypt app.enc.yaml | grep -E 'max_items|greeting'
+    max_items: 31
+greeting: edited without an editor
+
+# Removing a key is the mirror:
+
+$ sops unset app.enc.yaml ["greeting"]
+
+$ sops decrypt app.enc.yaml | grep -c greeting; true
+0
+
+# And one value can be lifted out alone, still without writing
+
+# a decrypted file anywhere:
+
+$ sops decrypt --extract '["database"]["username"]' app.enc.yaml
+workshop_app

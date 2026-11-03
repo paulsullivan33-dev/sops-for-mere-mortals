@@ -1,0 +1,83 @@
+# A file sealed for the operator alone (rules as in chapter 5).
+
+$ cat .sops.yaml
+creation_rules:
+    - age: "age1svvqr3y4rhe0dsypnrm5qa8fwlauav7f9ze5hlgm08kysczr450qmg4zht"
+
+$ sops encrypt -i secrets.yaml
+
+$ grep -c "recipient:" secrets.yaml
+1
+
+# A teammate joins: add their key to the rules and run updatekeys.
+
+# First attempt, with no key of a current holder in the
+
+# environment: updatekeys must unwrap the data key to re-wrap it,
+
+# so it refuses. A real trap, recorded as it happened:
+
+$ sops updatekeys -y secrets.yaml 2>&1 | tail -4; true
+
+Recovery failed because no master key was able to decrypt the file. In
+order for SOPS to recover the file, at least one key has to be successful,
+but none were.
+
+# With the operator's key available, the same command succeeds.
+
+# Only the key wrapping changes; the values are not re-encrypted.
+
+$ SOPS_AGE_KEY_FILE=/home/hatch/workspace/sops-labwork/work/keys/operator.txt sops updatekeys -y secrets.yaml 2>&1 | tail -5
+The following changes will be made to the file's groups:
+Group 1
+    age1svvqr3y4rhe0dsypnrm5qa8fwlauav7f9ze5hlgm08kysczr450qmg4zht
++++ age18n58ry4m57yjkn95skz7t5wchmg8vkw53rl02yz3su99l70jz9xscd4tzn
+2026/11/03 00:58:01 File /home/hatch/workspace/sops-labwork/work/rotation/secrets.yaml synced with new keys
+
+$ grep -c "recipient:" secrets.yaml
+2
+
+$ SOPS_AGE_KEY_FILE=/home/hatch/workspace/sops-labwork/work/keys/teammate.txt sops decrypt secrets.yaml
+service: fixture-mailer
+smtp_password: rotation-fixture-secret-555
+
+# The teammate moves on. Remove the operator's key the same way
+
+# (the operator is still a holder while making the change):
+
+$ SOPS_AGE_KEY_FILE=/home/hatch/workspace/sops-labwork/work/keys/operator.txt sops updatekeys -y secrets.yaml 2>&1 | tail -5
+The following changes will be made to the file's groups:
+Group 1
+    age18n58ry4m57yjkn95skz7t5wchmg8vkw53rl02yz3su99l70jz9xscd4tzn
+--- age1svvqr3y4rhe0dsypnrm5qa8fwlauav7f9ze5hlgm08kysczr450qmg4zht
+2026/11/03 00:58:01 File /home/hatch/workspace/sops-labwork/work/rotation/secrets.yaml synced with new keys
+
+$ grep -c "recipient:" secrets.yaml
+1
+
+$ SOPS_AGE_KEY_FILE=/home/hatch/workspace/sops-labwork/work/keys/operator.txt sops decrypt secrets.yaml 2>&1 | head -2; true
+Failed to get the data key required to decrypt the SOPS file.
+
+
+$ SOPS_AGE_KEY_FILE=/home/hatch/workspace/sops-labwork/work/keys/teammate.txt sops decrypt secrets.yaml
+service: fixture-mailer
+smtp_password: rotation-fixture-secret-555
+
+# Separately, rotate swaps the data key itself: same recipients,
+
+# every value re-sealed under a fresh key, same plaintext after.
+
+$ SOPS_AGE_KEY_FILE=/home/hatch/workspace/sops-labwork/work/keys/teammate.txt sops decrypt secrets.yaml | sha256sum
+a7e4906cab535e8537c20f788ec3b40008830ba8dc029e83fafdddb84115b2be  -
+
+$ grep "mac:" secrets.yaml | cut -c1-46
+    mac: ENC[AES256_GCM,data:1AKP2ipHeSrmgRv46
+
+$ SOPS_AGE_KEY_FILE=/home/hatch/workspace/sops-labwork/work/keys/teammate.txt sops rotate -i secrets.yaml
+
+$ grep "mac:" secrets.yaml | cut -c1-46
+    mac: ENC[AES256_GCM,data:m77Lepm36bDiSBkMB
+
+$ SOPS_AGE_KEY_FILE=/home/hatch/workspace/sops-labwork/work/keys/teammate.txt sops decrypt secrets.yaml | sha256sum
+a7e4906cab535e8537c20f788ec3b40008830ba8dc029e83fafdddb84115b2be  -
+
